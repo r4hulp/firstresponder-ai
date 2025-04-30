@@ -26,6 +26,8 @@ FirstResponder-AI is a real-time, low-latency voice agent powered by OpenAI's Re
 
 ## 🏗️ Architecture
 
+![Architecture](architecture.png)
+
 ```mermaid
 flowchart LR
     subgraph Frontend
