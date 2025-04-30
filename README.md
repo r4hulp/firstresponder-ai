@@ -1,7 +1,6 @@
 # 🔊 FirstResponder-AI: Azure-Powered Realtime Call Intelligence
 
-FirstResponder-AI is a real-time, low-latency voice agent powered by OpenAI's Realtime APIs and Azure Communication Services. Leveraging advanced Speech-to-Speech (S2S) architectures and multimodal AI models, it enables natural, human-like conversations with minimal delay. This solution is designed to revolutionize customer support by providing instant, scalable, and highly personalized voice interactions.
-
+FirstResponder-AI is a real-time, low-latency voice agent powered by OpenAI's Realtime APIs and Azure Communication Services. Leveraging advanced Speech-to-Speech (S2S) model, it enables natural, human-like conversations with minimal delay. This solution is designed to revolutionize customer support by providing instant, scalable, and highly personalized voice interactions. 
 
 
 ## 🚀 Key Benefits
@@ -70,7 +69,7 @@ flowchart LR
     Table --> Dashboard
 ```
 
-## ⚙️ Workflow
+## ⚙️ Application Flow
 
 1. **Caller initiates a call** to the hotline number connected to ACS
 2. **ACS** connects the call and emits `incomingCall` event

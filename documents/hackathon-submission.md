@@ -4,7 +4,7 @@ FirstResponder-AI - Real-time Voice Agent for Customer Support
 
 # Description
 
-FirstResponder-AI is an innovative real-time voice agent that revolutionizes customer support by leveraging OpenAI's Realtime APIs and Azure Communication Services. It provides instant, natural, and human-like conversations with minimal latency.
+FirstResponder-AI is a real-time, low-latency voice agent powered by OpenAI's Realtime APIs and Azure Communication Services. Leveraging advanced Speech-to-Speech (S2S) model, it enables natural, human-like conversations with minimal delay. This solution is designed to revolutionize customer support by providing instant, scalable, and highly personalized voice interactions. 
 
 # Problem Definition:
 
@@ -19,47 +19,8 @@ FirstResponder-AI is an innovative real-time voice agent that revolutionizes cus
 
 ## Architecture Overview:
 
-```mermaid
-flowchart LR
-    subgraph Frontend
-        Caller([Caller])
-        Dashboard(["Dashboard<br/>(Analysis, Quality, Review)"])
-    end
+![Architecture](/architecture.png)
 
-    subgraph "Azure Services"
-        ACS([Azure Communication Service])
-    end
-
-    subgraph Backend
-        Orchestrator([Call Orchestrator])
-        OpenAI(["Azure OpenAI Realtime API<br/>(websocket)"])
-        ThirdParty(["Third Party Integrations"])
-        RecorderFn(["recorder-fn<br/>(Transcribe, Speaker Diarization,<br/>Generate Call Summary, Plan of Actions)"])
-    end
-
-    subgraph "Storage & Processing"
-        Queue([Queue])
-        Blob([Blob])
-        Table([Table])
-    end
-
-    Caller --> ACS
-    ACS -- events --> Orchestrator
-    ACS -- websocket --> OpenAI
-    OpenAI --> ThirdParty
-
-    Orchestrator -- transcriptionQueue --> Queue
-    Orchestrator -- callRecordings --> Blob
-    Orchestrator -- callInformation --> Table
-
-    Queue -- recordingAvailable --> RecorderFn
-    Blob -- recordingAvailable --> RecorderFn
-
-    RecorderFn --> Dashboard
-
-    Blob --> Dashboard
-    Table --> Dashboard
-```
 
 ## Implementation Overview:
 
@@ -75,6 +36,7 @@ FirstResponder-AI implements a sophisticated architecture that combines multiple
    - Azure OpenAI Service for natural language processing and response generation
    - Azure Communication Services for voice handling and call management
    - Azure Event Grid for event processing and system coordination
+   - Azure Functions for handling call events and orchestration
 
 3. **Storage and Analytics:**
    - Azure Blob Storage for call recordings and data persistence
@@ -100,23 +62,68 @@ The system leverages several key Azure services:
    - Enables sentiment analysis
    - Generates call summaries and insights
 
+4. **Azure Functions:**
+   - Handles call events and orchestration
+   - Transforms data for storage and dashboard
+
 ## Application Flow:
 
-1. **Call Initiation:**
-   - Customer initiates call through Azure Communication Services
-   - System establishes real-time connection with OpenAI
 
-2. **Real-time Processing:**
-   - Voice input is processed through Azure AI Speech
-   - OpenAI generates contextual responses
-   - Azure Communication Services delivers voice response
+```mermaid
+sequenceDiagram
+    participant Caller
+    participant ACS as Azure Communication Service
+    participant OpenAI as OpenAI Realtime API
+    participant CO as Call Orchestrator
+    participant Storage as Azure Storage
+    participant Pipeline as AI Speech Pipeline
+    participant DB as Dashboard
 
-3. **Post-call Processing:**
-   - Call recording is stored in Azure Blob Storage
-   - Transcription and analysis performed by recorder-fn
-   - Results available in dashboard for review
+    Caller->>ACS: Dials hotline number
+    ACS->>CO: Emits "incomingCall" event
+    CO->>Storage: Logs call initiation
+    ACS->>OpenAI: Establishes websocket connection
+    
+    loop Conversation
+        Caller->>ACS: Audio stream
+        ACS->>OpenAI: Forwards audio
+        OpenAI->>ACS: AI response
+        ACS->>Caller: Delivers AI response
+        ACS->>CO: Emits call events
+        CO->>Storage: Updates call metadata
+    end
+    
+    ACS->>CO: Emits "callRecordingReady" event
+    CO->>Storage: Stores recording in Blob
+    CO->>Pipeline: Triggers speech processing
+    
+    Pipeline->>Pipeline: Transcribes audio
+    Pipeline->>Pipeline: Performs speaker diarization
+    Pipeline->>Pipeline: Generates summary & action plan
+    Pipeline->>Storage: Stores processed data
+    
+    DB->>Storage: Retrieves call data & analytics
+    Caller->>DB: Team reviews conversation
+```
 
-![applicationflow](/documents/assets/application-flow.png)
+
+1. **Caller initiates a call** to the hotline number connected to ACS
+2. **ACS** connects the call and emits `incomingCall` event
+3. **Call Orchestrator** (Azure Function) listens to events and begins orchestration:
+   - Connects to OpenAI Realtime API for voice-agent interaction
+   - Stores call details to Table storage
+   - On `callRecordingReady`, stores the audio in Blob storage and enqueues for processing
+4. **Azure AI Speech Pipeline**:
+   - Transcribes the call
+   - Performs speaker diarization
+   - Generates a structured summary and plan of action
+5. **Dashboard** displays:
+   - Full call log, transcription, summary
+   - Allows human review, callbacks, and annotation
+   - Call recording playback and timestamped transcript
+
+
+
 
 ## Technologies Used:
 
@@ -127,6 +134,8 @@ The system leverages several key Azure services:
 - **Development Tools:** TypeScript, Python 3.x
 
 ## Target Audience:
+
+The source code contains a working example of agent designed to cater needs of an electronic devices shop (mobile phones)'s support. But the agent instructions architecture is designed to be extended to cater needs of any organization.
 
 1. **Enterprise Contact Centers:**
    - Organizations looking to modernize customer support
@@ -157,19 +166,23 @@ FirstResponder-AI demonstrates the potential of AI-powered voice agents in trans
    - Advanced sentiment analysis and emotion detection
    - Improved context awareness and personalization
 
-2. **Platform Extensions:**
-   - Support for additional communication channels
+2. **Specialized Agents Routing:**
+   - ACS enables routing of calls to specialized agents based on the nature of the call
+
+3. **Platform Extensions:**
+   - Support for additional communication channels via ACS
    - Integration with more third-party services
    - Enhanced analytics and reporting features
 
-3. **Security and Compliance:**
+4. **Security and Compliance:**
    - Advanced encryption and security features
    - Additional compliance certifications
    - Enhanced privacy controls
 
 ## Developers:
 
-Rahul Patil & Sanket Ghorpade
+- Rahul Patil - [GitHub](https://github.com/r4hulp)
+- Sanket Ghorpade - [GitHub](https://github.com/loflet)
 
 ## Technology & Languages
 
@@ -193,8 +206,8 @@ https://github.com/r4hulp/firstresponder-ai
 
 ## Project Video
 
-[Video URL to be added]
+https://www.youtube.com/watch?v=zdWUlTf20NI
 
 ## Team Members
 
-@r4hulp [], @loflet [ghorpade.sanket@hotmail.com] 
+@r4hulp [rahulpp@live.com], @loflet [ghorpade.sanket@hotmail.com] 
