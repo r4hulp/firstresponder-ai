@@ -210,6 +210,29 @@ firstresponder-ai/
 - 🐍 Python 3.x (for backend)
 - ☁️ Azure subscription with necessary services enabled
 
+### 🔧 Required Azure Services
+
+The following Azure services need to be set up in your Azure subscription:
+
+1. **Azure Communication Services**
+   - Required for real-time voice communication
+   - Provides telephony integration and call handling
+   - Used for call recording and event emission
+
+2. **Azure OpenAI Services Service Endpoint**
+   - Required for OpenAI Realtime API, Speech AI
+
+3. **Azure Storage**
+   - Blob Storage: Stores call recordings
+   - Table Storage: Stores call metadata and transcripts
+   - Queue - Used for event-driven communication between services
+
+4. **Azure Event Grid**
+   - Handles event-driven communication between services
+   - Manages call lifecycle events
+   - Triggers post-processing workflows
+  
+
 ### ▶️ Frontend Setup
 
 1. Navigate to the frontend directory:
@@ -257,33 +280,29 @@ Both frontend and backend require environment variables to be set up. Create `.e
 ### 🖥️ Frontend (`frontend/.env`)
 
 ```env
-# API endpoint for backend communication
-NEXT_PUBLIC_API_URL=http://localhost:8000
+# Azure Storage Account Configuration
+AZURE_STORAGE_ACCOUNT_NAME=your_storage_account_name
+AZURE_STORAGE_ACCOUNT_KEY=your_storage_account_key
 
-# Azure Communication Services connection string
-NEXT_PUBLIC_ACS_CONNECTION_STRING=your_acs_connection_string
+# Azure OpenAI Configuration
+AZURE_OPENAI_RESOURCE_NAME=your_openai_resource_name
+AZURE_OPENAI_MODEL_KEY=your_openai_api_key
+AZURE_OPENAI_DEPLOYMENT_NAME=your_deployment_name
+
+# Note: Replace the placeholder values with your actual Azure service credentials
+# These values should be kept secure and never committed to version control
 ```
 
 ### 🖧 Backend (`backend/.env`)
 
 ```env
-# Azure OpenAI Service
-AZURE_OPENAI_API_KEY=your_openai_api_key
-AZURE_OPENAI_ENDPOINT=https://your-openai-resource.openai.azure.com/
+AZURE_OPENAI_API_KEY="your_azure_openai_api_key"
+AZURE_OPENAI_REALTIME_ENDPOINT="your_azure_openai_realtime_endpoint"
+AZURE_OPENAI_REALTIME_DEPLOYMENT_MODEL_NAME="your_azure_openai_realtime_deployment_model_name"
 
-# Azure Communication Services
-AZURE_COMMUNICATION_SERVICE_CONNECTION_STRING=your_acs_connection_string
+ACS_CONNECTION_STRING="your_azure_communication_connection_string"
+CALLBACK_URI_HOST="your_callback_uri_host"
 
-# Azure Storage
-AZURE_STORAGE_CONNECTION_STRING=your_storage_connection_string
-
-# Event Grid
-AZURE_EVENT_GRID_TOPIC_ENDPOINT=your_event_grid_topic_endpoint
-AZURE_EVENT_GRID_KEY=your_event_grid_key
-
-# Other backend-specific settings
-PORT=8000
-DEBUG=True
 ```
 
 
