@@ -1,4 +1,4 @@
-﻿// Default URL for triggering event grid function in the local environment.
+// Default URL for triggering event grid function in the local environment.
 // http://localhost:7071/runtime/webhooks/EventGrid?functionName={functionname}
 
 using System;
@@ -17,7 +17,7 @@ using Microsoft.Extensions.Logging;
 using recorder_fn.Models;
 using recorder_fn.Services;
 
-namespace recorder_fn
+namespace recorder_fn.Functions
 {
 	public class RecordingAvailable
 	{
@@ -33,7 +33,6 @@ namespace recorder_fn
 		{
 			if (eventGridEvent.EventType == "Microsoft.Communication.RecordingFileStatusUpdated")
 			{
-
 				_logger.LogInformation("Recording available event received");
 
 				string acsConnectionString = Environment.GetEnvironmentVariable("ACS_CONNECTION_STRING");
@@ -64,17 +63,11 @@ namespace recorder_fn
 					_logger.LogError("AzureWebJobsStorage is not set");
 					return;
 				}
-			
 
-				_logger.LogInformation("ACS_CONNECTION_STRING: " + acsConnectionString);
-				_logger.LogInformation("BLOB_CONNECTION_STRING: " + blobConnectionString);
-				_logger.LogInformation("BLOB_CONTAINER_NAME: " + blobContainerName);
-				_logger.LogInformation("AzureWebJobsStorage: " + queueConnectionString);
-	
 				CallAutomationClient callAutomationClient = new CallAutomationClient(acsConnectionString);
 				BlobServiceClient blobServiceClient = new BlobServiceClient(blobConnectionString);
 				BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(blobContainerName);
-				_logger.LogInformation($"Call Recording Event Received, {eventGridEvent.Data.ToString()}");
+				_logger.LogInformation("Call Recording Event Received");
 
 				var callEvent = eventGridEvent.Data.ToObjectFromJson<CallRecordingDetails>();
 				var recordingLocation = callEvent.recordingStorageInfo.recordingChunks[0].contentLocation;
@@ -83,18 +76,12 @@ namespace recorder_fn
 				var recordingTimeString = recordingTime.ToString("yyyyMMddHHmmss");
 				var recordingDownloadUri = new Uri(recordingLocation);
 
-
-				_logger.LogInformation("Recording downloaded call");
-
-
-				// create a folder with today's date.. if it doesn't exist
 				var today = DateTime.Today;
 				var folderName = today.ToString("yyyyMMdd");
 				var recordingGuid = Guid.NewGuid().ToString();
 				var detailedFolderName = $"{folderName}/{recordingGuid}";
 				var audioFilePath = $"{detailedFolderName}/call-{recordingTimeString}.mp3";
 				var transcriptFilePath = $"{detailedFolderName}/metadata-{recordingTimeString}.json";
-
 
 				var audioBlobClient = containerClient.GetBlobClient(audioFilePath);
 				var transcriptBlobClient = containerClient.GetBlobClient(transcriptFilePath);
@@ -107,7 +94,7 @@ namespace recorder_fn
 				{
 					try
 					{
-						_logger.LogInformation($"Downloading recording from {recordingDownloadUri}");
+						_logger.LogInformation("Downloading recording");
 						var recordingStream = callAutomationClient.GetCallRecording().DownloadStreaming(recordingDownloadUri).Value;
 
 						await audioBlobClient.UploadAsync(recordingStream, true);
@@ -180,4 +167,4 @@ namespace recorder_fn
 
 		}
 	}
-}
+} 

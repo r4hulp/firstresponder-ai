@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace recorder_fn
+namespace recorder_fn.Models
 {
 	public class RecordingChunk
 	{
@@ -29,6 +29,4 @@ namespace recorder_fn
 		public string storageType { get; set; }
 		public string sessionEndReason { get; set; }
 	}
-
-
-}
+} 

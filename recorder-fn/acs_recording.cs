@@ -7,6 +7,7 @@ using Azure.Messaging;
 using Azure.Messaging.EventGrid;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
+using recorder_fn.Models;
 
 namespace RapidCircle.AISupport
 {

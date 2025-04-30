@@ -1,6 +1,5 @@
-namespace RapidCircle.AISupport
+namespace recorder_fn.Models
 {
-
     public class CallStartedEvent
     {
         public StartedBy startedBy { get; set; }
@@ -28,4 +27,4 @@ namespace RapidCircle.AISupport
     {
         public string id { get; set; }
     }
-}
+} 

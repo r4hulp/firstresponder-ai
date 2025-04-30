@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace recorder_fn
+namespace recorder_fn.Models
 {
 	public class CallDetails
 	{
@@ -38,4 +38,4 @@ namespace recorder_fn
 		[JsonPropertyName("value")]
 		public string Value { get; set; }
 	}
-}
+} 

@@ -9,6 +9,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using PhoneNumbers;
 using RapidCircle.AISupport;
+using recorder_fn.Models;
 using recorder_fn.Services;
 
 namespace recorder_fn
