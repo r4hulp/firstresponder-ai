@@ -23,7 +23,6 @@ namespace recorder_fn.Functions
         public void Run([EventGridTrigger] EventGridEvent eventGridEvent)
         {
             _logger.LogInformation("Event type: {type}, Event subject: {subject}", eventGridEvent.EventType, eventGridEvent.Subject);
-			
-		}
+        }
     }
 } 

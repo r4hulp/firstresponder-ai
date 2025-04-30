@@ -25,7 +25,7 @@ namespace recorder_fn.Functions
         }
 
         [Function(nameof(Transcribe))]
-        public async Task Run([QueueTrigger("transcribe")] QueueMessage message)
+        public async Task Run([QueueTrigger(Constants.QUEUE_TRANSCRIBE)] QueueMessage message)
         {
             _logger.LogInformation("Processing transcription queue message");
 
@@ -36,7 +36,7 @@ namespace recorder_fn.Functions
 
             _logger.LogInformation($"Processing call recording - RowKey: {rowKey}, PartitionKey: {partitionKey}");
 
-            var tableService = new CallRecordingService(Environment.GetEnvironmentVariable("BLOB_CONNECTION_STRING"), "records");
+            var tableService = new CallRecordingService(Environment.GetEnvironmentVariable(Constants.BLOB_CONNECTION_STRING), Constants.TABLE_RECORDS);
             var callRecordingEntity = tableService.GetCallRecordingAsync(rowKey, partitionKey).Result;
 
             string localFilePath = await DownloadBlobFileAsync(callRecordingEntity.RelativeAudioUrl, _logger);
@@ -64,8 +64,8 @@ namespace recorder_fn.Functions
         private static async Task<string> DownloadBlobFileAsync(string relativeBlobUrl, ILogger<Transcribe> logger)
         {
             string containerRelativeBlobPath = relativeBlobUrl;
-            var blobServiceClient = new BlobServiceClient(Environment.GetEnvironmentVariable("BLOB_CONNECTION_STRING"));
-            var blobContainerClient = blobServiceClient.GetBlobContainerClient(Environment.GetEnvironmentVariable("BLOB_CONTAINER_NAME"));
+            var blobServiceClient = new BlobServiceClient(Environment.GetEnvironmentVariable(Constants.BLOB_CONNECTION_STRING));
+            var blobContainerClient = blobServiceClient.GetBlobContainerClient(Environment.GetEnvironmentVariable(Constants.BLOB_CONTAINER_NAME));
             var blobClient = blobContainerClient.GetBlobClient(containerRelativeBlobPath);
 
             string localFilePath = Path.Combine(Path.GetTempPath(), containerRelativeBlobPath);
@@ -83,21 +83,19 @@ namespace recorder_fn.Functions
 
         private static async Task<string> SendFileToSpeechAPIAsync(string audioFilePath, ILogger<Transcribe> logger)
         {
-            string apiUrl = Environment.GetEnvironmentVariable("SPEECH_API_URL");
+            string apiUrl = Environment.GetEnvironmentVariable(Constants.SPEECH_API_URL);
             using (var client = new HttpClient())
             {
-                client.DefaultRequestHeaders.Add("Accept", "application/json");
-                client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", Environment.GetEnvironmentVariable("AZURE_OPENAI_KEY"));
+                client.DefaultRequestHeaders.Add(Constants.HEADER_ACCEPT, Constants.HEADER_ACCEPT_VALUE);
+                client.DefaultRequestHeaders.Add(Constants.HEADER_OCP_APIM_SUBSCRIPTION_KEY, Environment.GetEnvironmentVariable(Constants.AZURE_OPENAI_KEY));
 
                 using (var formData = new MultipartFormDataContent())
                 {
                     var audioFileContent = new ByteArrayContent(File.ReadAllBytes(audioFilePath));
-                    audioFileContent.Headers.ContentType = new MediaTypeHeaderValue("audio/mp3");
+                    audioFileContent.Headers.ContentType = new MediaTypeHeaderValue($"audio/{Constants.AUDIO_FILE_FORMAT}");
 
                     formData.Add(audioFileContent, "audio", Path.GetFileName(audioFilePath));
-
-                    var definition = @"{""locales"":[""en-us""],""profanityFilterMode"":""None"",""diarization"":{""maxSpeakers"":2,""enabled"":true}}";
-                    formData.Add(new StringContent(definition), "definition");
+                    formData.Add(new StringContent(Constants.SPEECH_API_DEFINITION), "definition");
 
                     var response = await client.PostAsync(apiUrl, formData);
                     response.EnsureSuccessStatusCode();
@@ -110,9 +108,9 @@ namespace recorder_fn.Functions
 
         private async Task<string> GetCallSummary(string transcript, ILogger<Transcribe> _logger)
         {
-            var endpoint = new Uri($"https://{Environment.GetEnvironmentVariable("AZURE_AI_RESOURCE_NAME")}.openai.azure.com/");
-            var deploymentName = Environment.GetEnvironmentVariable("AZURE_AI_RESOURCE_DEPLOYMENT_NAME");
-            var apiKey = Environment.GetEnvironmentVariable("AZURE_AI_RESOURCE_KEY");
+            var endpoint = new Uri($"https://{Environment.GetEnvironmentVariable(Constants.AZURE_AI_RESOURCE_NAME)}.openai.azure.com/");
+            var deploymentName = Environment.GetEnvironmentVariable(Constants.AZURE_AI_RESOURCE_DEPLOYMENT_NAME);
+            var apiKey = Environment.GetEnvironmentVariable(Constants.AZURE_AI_RESOURCE_KEY);
 
             AzureOpenAIClient azureClient = new(endpoint, new AzureKeyCredential(apiKey));
             ChatClient chatClient = azureClient.GetChatClient(deploymentName);

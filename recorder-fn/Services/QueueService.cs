@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Azure.Storage.Queues;
 
 namespace recorder_fn.Services
 {
-	public class QueueService
+	public class QueueService : IQueueService
 	{
 		private readonly QueueClient _queueClient;
 

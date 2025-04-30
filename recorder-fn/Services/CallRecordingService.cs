@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace recorder_fn.Services
 {
-	public class CallRecordingService
+	public class CallRecordingService : ICallRecordingService
 	{
 		private readonly TableClient _tableClient;
 

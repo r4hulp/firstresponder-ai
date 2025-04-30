@@ -31,36 +31,36 @@ namespace recorder_fn.Functions
 		[Function(nameof(RecordingAvailable))]
 		public async Task RunAsync([EventGridTrigger] EventGridEvent eventGridEvent)
 		{
-			if (eventGridEvent.EventType == "Microsoft.Communication.RecordingFileStatusUpdated")
+			if (eventGridEvent.EventType == Constants.EVENT_TYPE_RECORDING_FILE_STATUS_UPDATED)
 			{
 				_logger.LogInformation("Recording available event received");
 
-				string acsConnectionString = Environment.GetEnvironmentVariable("ACS_CONNECTION_STRING");
-				string blobConnectionString = Environment.GetEnvironmentVariable("BLOB_CONNECTION_STRING");
-				string blobContainerName = Environment.GetEnvironmentVariable("BLOB_CONTAINER_NAME");
-				string queueConnectionString = Environment.GetEnvironmentVariable("AzureWebJobsStorage");
+				string acsConnectionString = Environment.GetEnvironmentVariable(Constants.ACS_CONNECTION_STRING);
+				string blobConnectionString = Environment.GetEnvironmentVariable(Constants.BLOB_CONNECTION_STRING);
+				string blobContainerName = Environment.GetEnvironmentVariable(Constants.BLOB_CONTAINER_NAME);
+				string queueConnectionString = Environment.GetEnvironmentVariable(Constants.AZURE_WEBJOBS_STORAGE);
 
 				if(string.IsNullOrEmpty(acsConnectionString))
 				{
-					_logger.LogError("ACS_CONNECTION_STRING is not set");
+					_logger.LogError($"{Constants.ACS_CONNECTION_STRING} is not set");
 					return;
 				}
 
 				if (string.IsNullOrEmpty(blobConnectionString))
 				{
-					_logger.LogError("BLOB_CONNECTION_STRING is not set");
+					_logger.LogError($"{Constants.BLOB_CONNECTION_STRING} is not set");
 					return;
 				}	
 
 				if (string.IsNullOrEmpty(blobContainerName))
 				{
-					_logger.LogError("BLOB_CONTAINER_NAME is not set");
+					_logger.LogError($"{Constants.BLOB_CONTAINER_NAME} is not set");
 					return;
 				}
 
 				if (string.IsNullOrEmpty(queueConnectionString))
 				{
-					_logger.LogError("AzureWebJobsStorage is not set");
+					_logger.LogError($"{Constants.AZURE_WEBJOBS_STORAGE} is not set");
 					return;
 				}
 
@@ -73,15 +73,15 @@ namespace recorder_fn.Functions
 				var recordingLocation = callEvent.recordingStorageInfo.recordingChunks[0].contentLocation;
 				var metadataLocation = callEvent.recordingStorageInfo.recordingChunks[0].metadataLocation;
 				var recordingTime = callEvent.recordingStartTime;
-				var recordingTimeString = recordingTime.ToString("yyyyMMddHHmmss");
+				var recordingTimeString = recordingTime.ToString(Constants.DATE_FORMAT_YYYYMMDDHHMMSS);
 				var recordingDownloadUri = new Uri(recordingLocation);
 
 				var today = DateTime.Today;
-				var folderName = today.ToString("yyyyMMdd");
+				var folderName = today.ToString(Constants.DATE_FORMAT_YYYYMMDD);
 				var recordingGuid = Guid.NewGuid().ToString();
 				var detailedFolderName = $"{folderName}/{recordingGuid}";
-				var audioFilePath = $"{detailedFolderName}/call-{recordingTimeString}.mp3";
-				var transcriptFilePath = $"{detailedFolderName}/metadata-{recordingTimeString}.json";
+				var audioFilePath = string.Format(Constants.AUDIO_FILE_PATH_TEMPLATE, detailedFolderName, recordingTimeString, Constants.AUDIO_FILE_FORMAT);
+				var transcriptFilePath = string.Format(Constants.METADATA_FILE_PATH_TEMPLATE, detailedFolderName, recordingTimeString, Constants.METADATA_FILE_FORMAT);
 
 				var audioBlobClient = containerClient.GetBlobClient(audioFilePath);
 				var transcriptBlobClient = containerClient.GetBlobClient(transcriptFilePath);
@@ -96,37 +96,17 @@ namespace recorder_fn.Functions
 					{
 						_logger.LogInformation("Downloading recording");
 						var recordingStream = callAutomationClient.GetCallRecording().DownloadStreaming(recordingDownloadUri).Value;
-
 						await audioBlobClient.UploadAsync(recordingStream, true);
 
-						_logger.LogInformation($"downloading call metadata from {metadataLocation}");
-
+						_logger.LogInformation("Downloading call metadata");
 						var transcriptStream = callAutomationClient.GetCallRecording().DownloadStreaming(new Uri(metadataLocation)).Value;
-
-						_logger.LogInformation($"Metadata is: {transcriptStream}");
-
-						// parse the transcript stream into a json object
 						var transcriptObject = JsonSerializer.Deserialize<CallMetadata>(transcriptStream);
-
-						//convert transcriptObject to json string
 						var transcriptJson = JsonSerializer.Serialize(transcriptObject);
-
-						_logger.LogInformation($"Transcript object: {transcriptJson}");
-
-
 						await transcriptBlobClient.UploadAsync(new BinaryData(transcriptJson), true);
 
-						_logger.LogInformation($"Transcript uploaded to BLOB");
-
-						// update information
-
-						var tableService = new CallRecordingService(blobConnectionString, "records");
-
+						var tableService = new CallRecordingService(blobConnectionString, Constants.TABLE_RECORDS);
 						string callId = Guid.NewGuid().ToString();
-
-						string partitionKey = DateTime.UtcNow.ToString("yyyyMMdd");
-
-						// get caller that doesn't start with acs:
+						string partitionKey = DateTime.UtcNow.ToString(Constants.DATE_FORMAT_YYYYMMDD);
 						var caller = transcriptObject.participants.FirstOrDefault(p => !p.participantId.StartsWith("acs:"))?.participantId;
 
 						var callEntity = new CallRecordingEntity
@@ -144,27 +124,21 @@ namespace recorder_fn.Functions
 							TranscribedOn = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc)
 						};
 
-						_logger.LogInformation("Saving the call information in table");
 						await tableService.SaveCallRecordingAsync(callEntity);
 
-						// send a message to the queue
-						_logger.LogInformation("Sending a queue message for transcription");
-						var queueService = new QueueService(queueConnectionString, "transcribe");
+						var queueService = new QueueService(queueConnectionString, Constants.QUEUE_TRANSCRIBE);
 						var queueIdentifier = $"{callId}:::{partitionKey}";
 						var bytes = Encoding.UTF8.GetBytes(queueIdentifier);
 						await queueService.SendMessageAsync(Convert.ToBase64String(bytes));
 
+						_logger.LogInformation("Recording processing completed successfully");
 					}
 					catch (Exception e)
 					{
-						_logger.LogInformation("Could not save the call information in table");
-						_logger.LogError($"error: {e.Message}");
+						_logger.LogError($"Error processing recording: {e.Message}");
 					}
 				}
-				_logger.LogInformation("Recording uploaded to BLOB");
 			}
-
-
 		}
 	}
 } 
