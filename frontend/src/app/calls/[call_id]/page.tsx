@@ -64,7 +64,7 @@ export default function CallTranscriptPage() {
 
   useEffect(() => {
     if (transcript) {
-      const supportAgent = transcript?.phrases.find(phrase => phrase.text.includes('Rapid Circle Support'));
+      const supportAgent = transcript?.phrases.find(phrase => phrase.text.includes('calling mobile support'));
 
       console.log(supportAgent);
       if (supportAgent) {
@@ -158,17 +158,16 @@ export default function CallTranscriptPage() {
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="mb-4">
-        <Button
-          variant="outline"
-          onClick={() => router.back()}
-          className="flex items-center gap-2 cursor-pointer"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Go Back
-        </Button>
-      </div>
+    <div className="container mx-auto p-6">
+      <Button
+        variant="ghost"
+        className="mb-6"
+        onClick={() => router.back()}
+      >
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back to Calls
+      </Button>
+
       {sasUrl && (
         <Card className="mb-4">
           <CardHeader>

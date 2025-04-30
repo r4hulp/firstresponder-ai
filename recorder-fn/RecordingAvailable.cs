@@ -112,14 +112,24 @@ namespace recorder_fn
 
 						await audioBlobClient.UploadAsync(recordingStream, true);
 
+						_logger.LogInformation($"downloading call metadata from {metadataLocation}");
+
 						var transcriptStream = callAutomationClient.GetCallRecording().DownloadStreaming(new Uri(metadataLocation)).Value;
+
+						_logger.LogInformation($"Metadata is: {transcriptStream}");
 
 						// parse the transcript stream into a json object
 						var transcriptObject = JsonSerializer.Deserialize<CallMetadata>(transcriptStream);
 
+						//convert transcriptObject to json string
+						var transcriptJson = JsonSerializer.Serialize(transcriptObject);
+
+						_logger.LogInformation($"Transcript object: {transcriptJson}");
 
 
-						await transcriptBlobClient.UploadAsync(transcriptStream, true);
+						await transcriptBlobClient.UploadAsync(new BinaryData(transcriptJson), true);
+
+						_logger.LogInformation($"Transcript uploaded to BLOB");
 
 						// update information
 
@@ -129,11 +139,14 @@ namespace recorder_fn
 
 						string partitionKey = DateTime.UtcNow.ToString("yyyyMMdd");
 
+						// get caller that doesn't start with acs:
+						var caller = transcriptObject.participants.FirstOrDefault(p => !p.participantId.StartsWith("acs:"))?.participantId;
+
 						var callEntity = new CallRecordingEntity
 						{
 							PartitionKey = partitionKey,
 							RowKey = callId,
-							Caller = transcriptObject.participants[1].participantId,
+							Caller = caller ?? transcriptObject.participants[1].participantId,
 							CallDuration = transcriptObject.chunkDuration.ToString(),
 							StartTime = transcriptObject.chunkStartTime,
 							SessionEndReason = callEvent.sessionEndReason,

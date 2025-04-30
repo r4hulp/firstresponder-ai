@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Support Agent Dashboard",
+  title: "🎧 Support Agent Dashboard",
   description: "",
 };
 

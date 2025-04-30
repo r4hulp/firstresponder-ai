@@ -7,7 +7,9 @@ using Azure.Messaging;
 using Azure.Messaging.EventGrid;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
+using PhoneNumbers;
 using RapidCircle.AISupport;
+using recorder_fn.Services;
 
 namespace recorder_fn
 {
@@ -27,7 +29,21 @@ namespace recorder_fn
 
             _logger.LogInformation(eventGridEvent.Data.ToString());
 
-            if (eventGridEvent.EventType == "Microsoft.Communication.IncomingCall")
+            var incomingCallEventData = eventGridEvent.Data.ToObjectFromJson<IncomingCallEventData>();
+
+            _logger.LogInformation(incomingCallEventData.from.phoneNumber.value);
+
+			var phoneUtil = PhoneNumberUtil.GetInstance();
+
+			string decodedNumber = System.Text.RegularExpressions.Regex.Unescape(incomingCallEventData.from.phoneNumber.value);
+			var number = phoneUtil.Parse(decodedNumber, null);
+			string formatted = phoneUtil.Format(number, PhoneNumberFormat.INTERNATIONAL);
+
+            // save this in the table
+            var tableService = new CallRecordingService(Environment.GetEnvironmentVariable("BLOB_CONNECTION_STRING"), "records");
+
+
+			if (eventGridEvent.EventType == "Microsoft.Communication.IncomingCall")
             {
                 _logger.LogInformation("Incoming call, starting the recording");
 
