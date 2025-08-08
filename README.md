@@ -1,6 +1,6 @@
 # 🔊 FirstResponder-AI: Azure-Powered Realtime Call Intelligence
 
-FirstResponder-AI is a real-time, low-latency voice agent powered by OpenAI's Realtime APIs and Azure Communication Services. Leveraging advanced Speech-to-Speech (S2S) architectures and multimodal AI models, it enables natural, human-like conversations with minimal delay. This solution is designed to revolutionize customer support by providing instant, scalable, and highly personalized voice interactions.
+**FirstResponder** is a real-time AI-powered voice agent designed to transform how businesses handle customer calls. Built entirely on Microsoft Azure, it connects through **Azure Communication Services** and uses **Azure OpenAI’s Realtime APIs** alongside **Azure AI Speech** to hold natural, human-like conversations with almost no delay. It works in multiple languages, can switch between them mid-call, and understands context to provide accurate, consistent responses 24/7. Beyond just answering queries, FirstResponder automatically summarises conversations, tracks sentiment, and creates actionable follow-up plans. This makes it faster, more cost-efficient — reducing per-call costs by up to 90% — and more reliable than traditional IVR systems, while delivering a superior and personalised customer experience.
 
 
 
